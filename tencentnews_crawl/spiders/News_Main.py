@@ -2,6 +2,7 @@ import scrapy
 import logging
 
 
+# 爬取腾讯新闻首页的例子
 class NewsMainSpider(scrapy.Spider):
 
     name = "news_main_spider"

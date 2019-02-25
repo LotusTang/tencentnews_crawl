@@ -1,0 +1,56 @@
+1. 在腾讯新闻首页中，由于我们需要提取的是所有在页面中的新闻内容包括标题等信息，但在首页中是存在不同形式的链接的，
+常见的有如下几种形式的链接:
+    一、 omn+日期+新闻ID
+        https://new.qq.com/omn/20190225/20190225A05F0J.html
+        # 内容可在原文中找到
+    二、 omn+新闻ID
+        https://new.qq.com/omn/20190224A0XN0G00
+        # 内容不可在原文中找到
+        但可以在对应的
+        https://openapi.inews.qq.com/getQQNewsNormalContent?
+        id=STO2019022500302300&chlid=news_rss&refer=mobilewwwqqcom&otype=jsonp&
+        ext_data=all&srcfrom=newsapp&callback=getNewsContentOnlyOutput
+        且对应不同的文章仅有id是不同的参数
+        id 为 newsId
+    三、 cmsn+新闻ID
+        https://new.qq.com/cmsn/20190225A0NREI00
+        # 内容不可在原文中找到
+        但其原文内容的地址在:
+        https://openapi.inews.qq.com/getQQNewsNormalContent?
+        id=20190224A0OK6500&chlid=news_rss&refer=mobilewwwqqcom&
+        otype=jsonp&ext_data=all&srcfrom=newsapp&
+        callback=getNewsContentOnlyOutput
+        id 的值就是 新闻ID 其它的话不知道什么意思，但不影响我们爬取对应的文章内容
+
+    四、 cmsn+日期+新闻ID
+        http://new.qq.com/cmsn/20190225/20190225006937.html
+        # 内容可在原文中找到
+    五、  a + 日期 + newID
+        https://news.qq.com/a/20190225/005688.htm
+        可直接在原文中找到
+    六、 专题页面,跳转到某个专题下，之后也是一堆新闻链接
+        https://new.qq.com/zt/template/?id=TEC2019021300930100
+
+2.  对于评论，都是如下的形式:
+    最后的是cmtid，用于标识每一个新闻的评论页面
+    http://coral.qq.com/3742832455
+    cmtid都可以在原网页的文件里找的到
+    但是评论的内容都不是在原网页里找到的，而是存在于某一个JS文件中的，具体请求Header为:
+    http://coral.qq.com/article/3742172440/comment/v2?
+    callback=_article3742172440commentv2&
+    orinum=10&oriorder=o&pageflag=1&cursor=0&scorecursor=0&orirepnum=2&
+    reporder=o&reppageflag=1&source=1&_=1551096437246
+
+    其中 第一个参数是callback,其内容为_article+cmtid+commentv2
+    orinum 指的是返回的评论的数目,一次最多为30
+    oriorder  表示评论排序的方式，o表示是按热度进行排序，t表示是按时间进行排序
+    pageflag
+    cursor  初始值为0表示第一波评论，之后需要根据下一个请求对应里面的last的值去打开下一波评论
+    scorecursor
+    orirepnum   表示每一条评论回复的评论数目最多为2，就是说楼中楼最多为两层
+    reporder  同oriorder
+    reppageflag
+    source
+    _
+
+# 分析完这些东西以后就是开始编写代码，先试试将首页的新闻全部都爬取下来
