@@ -14,12 +14,34 @@ BOT_NAME = 'tencentnews_crawl'
 SPIDER_MODULES = ['tencentnews_crawl.spiders']
 NEWSPIDER_MODULE = 'tencentnews_crawl.spiders'
 
-
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'tencentnews_crawl (+http://www.yourdomain.com)'
 
 # Obey robots.txt rules
-ROBOTSTXT_OBEY = True
+ROBOTSTXT_OBEY = False
+
+# 添加SPLASH配置信息
+SPLASH_URL = 'http://192.168.99.100:8050'
+
+DOWNLOADER_MIDDLEWARES = {
+    'scrapy_splash.SplashCookiesMiddleware': 723,
+    'scrapy_splash.SplashMiddleware': 725,
+    'scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware': 810,
+}
+
+SPIDER_MIDDLEWARES = {
+    'scrapy_splash.SplashDeduplicateArgsMiddleware': 100,
+}
+
+DUPEFILTER_CLASS = 'scrapy_splash.SplashAwareDupeFilter'
+HTTPCACHE_STORAGE = 'scrapy_splash.SplashAwareFSCacheStorage'
+
+# 增加pipeline配置文件
+ITEM_PIPELINES = {
+    # 'tencentnews_crawl.pipelines.MoviePipeline': 100,
+    # 'tencentnews_crawl.pipelines.XiaohuaPipeline': 100,
+    'tencentnews_crawl.pipelines.TestSplashPipeline': 300
+}
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 #CONCURRENT_REQUESTS = 32
@@ -64,9 +86,9 @@ ROBOTSTXT_OBEY = True
 
 # Configure item pipelines
 # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
-#ITEM_PIPELINES = {
+# ITEM_PIPELINES = {
 #    'tencentnews_crawl.pipelines.TencentnewsCrawlPipeline': 300,
-#}
+# }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://doc.scrapy.org/en/latest/topics/autothrottle.html

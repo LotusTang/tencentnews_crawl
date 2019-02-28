@@ -54,3 +54,73 @@
     _
 
 # 分析完这些东西以后就是开始编写代码，先试试将首页的新闻全部都爬取下来
+
+
+# 想要爬取首页的东西，不能依靠的是首页的源文件，而需要的是一个JS文件中指定的东西,这个JS文件的开头为rcd?之后再继续研究吧
+
+# 在首页中，链接不存在于页面源码里，而是保存在js文件之中
+    __jp0 里的js表示的是用户信息的内容
+    __jp1 表示今日要闻的信息
+    __jp2 表示热点精选，也就是今日要闻下面部分的内容
+    __jp3 表示热门资讯，属于右侧栏部分内容
+    __jp4 表示一些分类的cid..不知道干啥的
+    __jp5 表示如果继续往下翻，那么就是__jp5的热点精选，继续则是6和7...往后推
+
+
+    一、热门资讯请求的链接
+        https://pacaio.match.qq.com/irs/rcd?
+        cid=4&token=9513f1a78a663e1d25b46a826f248c3c&
+        ext=&page=0&expIds=&callback=__jp3
+        cid 应该是指热门资讯 这里是4
+        page 应该是指热门资讯的页数 最初为0 也可往后递推
+
+    二、 热点精选
+        https://pacaio.match.qq.com/irs/rcd?
+        cid=108&ext=&token=349ee24cdf9327a050ddad8c166bd3e3&
+        page=0&expIds=&callback=__jp2
+        cid 为108指的是热点精选，就是前排的几个下面带图片的那种
+        page 如果是往下翻则为1或者2等类推
+
+        # 这里我继续往下翻的话，就会触发下一个请求，也是属于热门资讯的，果然page=1且为紧接着的内容
+        https://pacaio.match.qq.com/irs/rcd?
+        cid=108&ext=&token=349ee24cdf9327a050ddad8c166bd3e3&
+        page=1&
+        expIds=
+        20190226A0I1LK|20190226A0BA6I|20190226V09NUH|20190212007987|20190226003879|
+        20190226A08S7M|20190226V0GUAF|20190226005417|20190226005643|20190226A00V3X|
+        20190207001639|20190226V0DNYY|20190226A0DNZV|20190226A0HIWT|20190226A0CZKM
+        &callback=__jp5
+        # 不清楚为什么callback变成了__jp5且expIds变成了有值但不知道是什么
+
+        # 往后翻页的url，暂时不知道...如何根据上一个获取下一个的expIds??:
+        https://pacaio.match.qq.com/irs/rcd?
+        cid=108&ext=&token=349ee24cdf9327a050ddad8c166bd3e3&
+        page=2&
+        expIds=
+        20190226A0K56S|20190226A0A1RW|20190226001477|20190226A0698D|20190225A17XK2|
+        20190226A09JFJ|20190226002166|20190226A0AN4G|20190226V0CLXI|20190225V1EWBT|
+        20190226001711|20190226A08MSH|20190226A0B39A|20190226A06X0E
+        &callback=__jp6
+
+        # 明白了，这里的expIds是根据上一个文章的id叠加在一起决定的下一个的请求，比如在__jp2里，有十五篇文章的
+        内容，那么这十五篇文章的id使用|分隔开作为下一个__jp5的请求参数里的expIds，这是为了根据之前的文章决定下
+        面的文章内容么?然后的话page就增加1，__jp后面的数字也是增加1... 其它参数不变
+
+    三、 今日要闻
+        https://i.match.qq.com/ninja/fragcontent?
+        pull_urls=news_top_2018&callback=__jp1
+        这个就很简单粗暴了，也没有其它什么可说的，不过这里不应该是news_top_2019?
+
+    我们主要还是关注的是今日要闻和热点精选，侧边栏有一些的链接我没有在JS里找到，不知道会不会在其它地方?
+    比如说在XHR里面？果然是...
+    比如侧边栏的谷雨和较真栏目，分别是
+    https://news.qq.com/ninja/qqnews_guyu.htm
+    https://news.qq.com/ninja/qqnews_jiaozhen.htm
+    今日话题:
+    https://news.qq.com/ninja/qqnews_jinrihuati.htm
+    广告推广:
+    https://news.qq.com/ninja/qqnews_tuiguang.htm
+    em....都在这里了，一个都不少
+
+    # 当前问题，如何顺利的编写代码将这些玩意儿给爬下来?
+
