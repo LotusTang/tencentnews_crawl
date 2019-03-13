@@ -1,0 +1,59 @@
+# 之前分析的第一版来说，确实存在一些问题，不知道，这才几天，为啥我抓取到的东西中就只有两种链接了，
+# 都是 omn 或者 cmsn + 日期 + newsid的，除此之外就是一个专题的了
+# 很郁闷呀，哦不，是有的，不过都存在于专题里面才有那种不加日期直接加上newsid的页面
+# 恩，而且他们都是使用一个
+
+omn + 日期 + newsid
+https://openapi.inews.qq.com/getQQNewsNormalContent?
+id=20190306A07SJF00
+&chlid=news_rss&refer=mobilewwwqqcom&
+otype=jsonp&ext_data=all&srcfrom=newsapp&callback=getNewsContentOnlyOutput
+
+
+cmsn + 日期 + newsid
+https://openapi.inews.qq.com/getQQNewsNormalContent?
+id=CRI2019030500998600
+&chlid=news_rss&refer=mobilewwwqqcom&
+otype=jsonp&ext_data=all&srcfrom=newsapp&callback=getNewsContentOnlyOutput
+
+# 上面两个id的值都是对应的最后的链接数字这样,所以我们可以通过链接拿到内容的json返回
+# 然后内容都在content节点下面,
+    object►ext_data►content►
+
+# 然后其他方面的内容，就随意获取就行了
+# 我去，原来除去上面两个，还有一样形式的加上html结尾的网页，然后这个是可以直接在原网页中找到的，:)
+# 心态爆炸，所以看来这个腾讯数据有点混杂呀，到底你是想怎样渲染呀我去
+# 算了算了，那对于这样的东西，我觉得还是得借助其它的方式去通过xpath获取这样比较靠谱一点
+# 明白了，每天都不一样，昨天是没有后缀的，今天是有后缀的，应该是两波人马轮流值班这样
+
+
+
+# 对于专题的内容，我们需要通过专题最后的那个id的值去获取到下一个页面的所有内容，
+# 具体的url为
+https://openapi.inews.qq.com/getQQNewsNormalContent?
+chlid=news_auto&refer=mobilewwwqqcom&otype=jsonp&ext_data=all&id=STO2018110500759200&callback=getNewsContentOnlyOutput
+
+然后这个json内容有一个 sectionData 字段，这个字段的值里包含了这个专题里所有内容的id，
+通过这个id以及下面的请求我们可以直接获取到内容的json字符串
+ 这个sectiondata的具体位置在，且它是一个数组:
+    object►ext_data►content►0►desc►sectionData►
+# 这个规律一定正确，当我们获取到所有的id数据列表之后，就可以通过这些id对文章的内容进行抓取，其实无所谓的是
+# 对于cmsn也好，omn也好，都是通过这个id直接拿到我们需要的数据。
+
+# 下面两个文章的内容很容易就可以通过id获取到json数据，
+    而且数据都在content这个数组节点里面:
+        object►ext_data►content►
+
+cmsn + newsid
+https://openapi.inews.qq.com/getQQNewsNormalContent?
+id=20190307A1E53Z00&chlid=news_rss&refer=mobilewwwqqcom&
+otype=jsonp&ext_data=all&srcfrom=newsapp&callback=getNewsContentOnlyOutput
+
+
+omn + newsid
+https://openapi.inews.qq.com/getQQNewsNormalContent?
+id=NBA2019030600701405&chlid=news_rss&refer=mobilewwwqqcom&
+otype=jsonp&ext_data=all&srcfrom=newsapp&callback=getNewsContentOnlyOutput
+
+
+

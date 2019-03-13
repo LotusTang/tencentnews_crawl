@@ -53,3 +53,16 @@ class TestSplashPipeline(object):
         return item
 
 
+# 腾讯新闻链接测试
+class TencentNewsUrlTest(object):
+    def open_spider(self, spider):
+        self.file = open("tencenturls.txt", 'w', encoding='utf-8')
+
+    def close_spider(self, spider):
+        self.file.close()
+
+    def process_item(self, item, spider):
+        # logging.debug("直接转换item:" + str(dict(item)))
+        line = str(dict(item)) + "\n"
+        self.file.write(line)
+        return item

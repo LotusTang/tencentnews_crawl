@@ -40,7 +40,9 @@ HTTPCACHE_STORAGE = 'scrapy_splash.SplashAwareFSCacheStorage'
 ITEM_PIPELINES = {
     # 'tencentnews_crawl.pipelines.MoviePipeline': 100,
     # 'tencentnews_crawl.pipelines.XiaohuaPipeline': 100,
-    'tencentnews_crawl.pipelines.TestSplashPipeline': 300
+    # 测试配合Splash的首次使用
+    # 'tencentnews_crawl.pipelines.TestSplashPipeline': 300
+    'tencentnews_crawl.pipelines.TencentNewsUrlTest': 300
 }
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)

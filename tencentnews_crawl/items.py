@@ -41,4 +41,10 @@ class SplashTestItem(Item):
     staging = Field()
 
 
+# 先使用Splash抓取首页的一些链接看看呗
+class TencentNewsUrl(Item):
+    url = Field()
+
+
+
 

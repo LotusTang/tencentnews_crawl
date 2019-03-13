@@ -21,6 +21,10 @@ class SplashExampleSpider(scrapy.Spider):
 
     # 只抓取一个京东页面作为示例
     def parse(self, response):
+        # 直接打印京东的看看
+        file_response = open("jindong_response.txt", 'w', encoding='utf-8')
+        file_response.write(str(response.text))
+
         site = Selector(response)
         # it_list = []
         it = SplashTestItem()

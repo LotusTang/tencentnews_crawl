@@ -1,0 +1,35 @@
+1. 将Python程序搞成windows服务，让它每天开机自己在后台运行，抓取url链接，然后存入数据库，
+当然我们不可以存放相同的数据，一定要通过每个item的id去确保数据的唯一性，然后在数据库中设置
+这个字段的唯一，出现重复则不会再次插入到数据库中去，这样我们就实现了一个定时不断收集新闻链接
+并存入到数据库中去的功能。
+这个数据表我们暂且称之为 newsurl_list
+包含字段:
+newsurl_id  unique  varchar 20  primarykey
+content_id varchar 20 primarykey
+news_title varchar 50
+news_intro varchar 150
+keywords varchar 30
+main_category varchar 12
+sub_category varchar 12
+comment_id varchar 15
+comment_num int 8 # 可更新字段
+publish_time datetime
+page_url varchar 70
+source varchar 15
+view_count int 10  # 可更新字段
+is_ztlink varchar  2 # 判断是否属于专题链接
+
+2. 接下来，就是新闻内容的数据库建立了
+对于一个新闻而言，那么我们肯定首先是看标题，然后时间，接下来就是内容了呗。
+em....由于我们爬取的方式的原因...我们需要建立的是一个content_id作为外键与主表的content_id关联
+
+content_id varchar 20 foreign key
+title varchar 50
+publish_time datetime
+article_content varchar 10000
+
+
+
+
+
+
