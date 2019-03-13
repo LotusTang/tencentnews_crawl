@@ -2,6 +2,8 @@ import tencentnews_crawl.RedianJinXuan_JSFileData as redianjs
 import tencentnews_crawl.Jinriyaowen_JSFileData as jinruyaowen
 import tencentnews_crawl.Remenzixun_JSFileData as remenzixun
 import datetime
+import logging
+import tencentnews_crawl.PythonLog as pythonlog
 
 
 def run():
@@ -14,6 +16,7 @@ def run():
     # 试试多线程? 那么问题来了，如果使用多线程去加快程序运行速度呢? 这里涉及到的是http请求接着又是把数据插入
     # 数据库中，难道分别将这两个分开么?
     # 我觉得这个问题可以留到后面解决，给自己留个todo吧，先完成主线任务好了
+    logger = logging.getLogger('tencentenws_application')
     t1 = datetime.datetime.now()
     redianjs.start_crawl_redianxinwen(headers)
     t2 = datetime.datetime.now()
@@ -22,13 +25,14 @@ def run():
     t3 = datetime.datetime.now()
     remenzixun.start_crawl_remenzixun(headers)
     t4 = datetime.datetime.now()
-    print("热点新闻耗时: ", (t2 - t1).seconds, "s")
-    print("今日要闻耗时: ", (t3 - t2).seconds, "s")
-    print("热门资讯耗时: ", (t4 - t3).seconds, "s")
-    print("本次抓取总耗时: ", (t4 - t1).seconds, "s")
+    logger.info("热点新闻耗时: ", (t2 - t1).seconds, "s")
+    logger.info("今日要闻耗时: ", (t3 - t2).seconds, "s")
+    logger.info("热门资讯耗时: ", (t4 - t3).seconds, "s")
+    logger.info("本次抓取总耗时: ", (t4 - t1).seconds, "s")
     # 仅两天的信息，就有三千多条...我的天
     # 下面该做的事情是，拿着这些数据库里的链接，根据日期，每次只爬取一天的所有网站的信息就ok了，我应该再添加
     # 一个字段，表示是否该站点已经被爬取
+
 
 if __name__ == '__main__':
     run()

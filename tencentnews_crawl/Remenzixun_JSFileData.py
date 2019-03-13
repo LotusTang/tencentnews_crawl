@@ -4,6 +4,7 @@ import tencentnews_crawl.MysqlUtils as mysqlutils
 import mysql.connector
 import datetime
 from bs4 import BeautifulSoup
+import logging
 
 
 def parse_response_to_dict(respo):
@@ -49,6 +50,7 @@ def start_crawl_remenzixun(headers):
 
 # 这个与热点精选是一模一样的写入数据库格式
 def write_into_mysql(connection, dict_data, page_number):
+    logger = logging.getLogger('tencentenws_application')
     sameitem_count = 0
     insertitem_count = 0
     check_if_exists = ("""
@@ -127,17 +129,17 @@ def write_into_mysql(connection, dict_data, page_number):
                 sameitem_count += 1
     except mysql.connector.IntegrityError as err:
         connection.rollback()
-        print("属于重复数据，不需要插入，更新即可")
-        print(err)
+        logger.error("属于重复数据，不需要插入，更新即可")
+        logger.error(err)
     # except mysql.connector.Error as err:
     #     connection.rollback()
     #     print("没有捕获的错误，请修改代码")
     #     print(err)
     else:
         connection.commit()
-        print("热门资讯 No." + str(page_number) + "条 : ", datetime.datetime.now())
-        print("新增数据: " + str(insertitem_count) + "条")
-        print("重复数据: " + str(sameitem_count) + "条")
+        logger.info("热门资讯 No." + str(page_number) + "条 : ")
+        logger.info("新增数据: " + str(insertitem_count) + "条")
+        logger.info("重复数据: " + str(sameitem_count) + "条")
     finally:
         cursor.close()
 
@@ -145,6 +147,7 @@ def write_into_mysql(connection, dict_data, page_number):
 # 先获取所有的id列表，然后我们再根据id获取到我们需要的内容
 # 专题信息的话，我们直接将所有
 def write_zt_content_mysql(cursor, content_id, unique_id):
+    logger = logging.getLogger('tencentenws_application')
     headers = {
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36',
         'cookie': 'pgv_pvi=873498624; pgv_pvid=8030797876; RK=D2yMD/QFzz; ptcz=090544707cfb8295f419620e0e05125ba60ae0539d0b83b00b7227ca8d839f63; tvfe_boss_uuid=c274d92db377a818; eas_sid=m1n5D4y7r2G6O796b9c466d135; ts_uid=3349329104; luin=o2542479897; ptui_loginuin=2542479897; lskey=000100001b7a54fcd3301a6718003674b4dd3347c8d0ffff8abb81b50d0c27fcfbf01c34a07f0e4a6d04a41c; o_cookie=2542479897; pac_uid=1_2542479897; qq_openid=A2D3079EDC813B79C1BC3CFE63707361; qq_access_token=41F46BA1B8DF36761DB630851A9FDB9F; qq_client_id=101487368; pgv_info=ssid=s5016911484; pgv_si=s5524955136; ts_last=news.qq.com/; ad_play_index=13'
@@ -177,9 +180,9 @@ def write_zt_content_mysql(cursor, content_id, unique_id):
     try:
         data_list = json.loads(encode_str)
     except json.decoder.JSONDecodeError as err:
-        print(err)
-        print("解析json出现问题")
-        print("问题字符串:", encode_str)
+        logger.error(err)
+        logger.error("解析json出现问题")
+        logger.error("问题字符串:", encode_str)
         return None
     for data_item in data_list:
         for url_item in data_item['artlist']:
@@ -201,16 +204,18 @@ def write_zt_content_mysql(cursor, content_id, unique_id):
                          + intial_str[intial_str.rindex("\"content\"") + 1:intial_str.index("relate_news_list") - 2] \
                          + "}"
         except ValueError:
-            print("json 格式出现问题")
+            logger.error("json 格式出现问题")
             continue
         except requests.exceptions.ConnectionError:
-            print("api请求等待时间过长")
+            logger.error("api请求等待时间过长")
             continue
         data_dict = json.loads(intial_str)
         content_str = ""
         for item_ in data_dict['content']:
             if item_['type'] == 1:
                 content_str += item_['value']
+        if len(content_str) >= 21100:
+            content_str = ""
         data = {
             'content_id': unique_id,
             'title': data_dict['title'],
@@ -225,6 +230,7 @@ def write_zt_content_mysql(cursor, content_id, unique_id):
 def write_link_content_mysql(cursor, content_id, html_url, is_html, unique_id, pub_time, title):
     # 对于不是html的需要做解析,否则我们使用beautifulsoup去解析内容
     # 使用uniqueid只是作为主外键关联的作用
+    logger = logging.getLogger('tencentenws_application')
     content_data_dict = None
     if is_html == 0:
         content_data_dict = get_newscontent_dict(content_id)
@@ -249,7 +255,7 @@ def write_link_content_mysql(cursor, content_id, html_url, is_html, unique_id, p
     if len(content_data_dict['article_content']) <= 21100:
         cursor.execute(insert_content_sql, data)
     else:
-        print("文章内容过长:", len(content_data_dict['article_content']))
+        logger.error("文章内容过长:", len(content_data_dict['article_content']))
 
 
 def get_newscontent_dict(content_id):
@@ -291,11 +297,12 @@ def get_newscontent_dict(content_id):
 
 
 def get_newscontent_from_html(url):
+    logger = logging.getLogger('tencentenws_application')
     try:
         resp = requests.get(url)
     except requests.exceptions.ConnectionError as err:
-        print(err)
-        print("html请求连接超时")
+        logger.error(err)
+        logger.error("html请求连接超时")
         return {
             'article_content': ''
         }

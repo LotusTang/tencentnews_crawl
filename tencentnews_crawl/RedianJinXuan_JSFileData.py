@@ -4,6 +4,7 @@ import datetime
 import tencentnews_crawl.MysqlUtils as pythonmysql
 import mysql.connector
 from bs4 import BeautifulSoup
+import logging
 
 
 def parse_response_to_dict(respo):
@@ -39,6 +40,7 @@ def get_next_reponse(data_dict, response):
 
 
 def get_newscontent_dict(content_id):
+    logger = logging.getLogger('tencentenws_application')
     headers = {
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36',
         'cookie': 'pgv_pvi=873498624; pgv_pvid=8030797876; RK=D2yMD/QFzz; ptcz=090544707cfb8295f419620e0e05125ba60ae0539d0b83b00b7227ca8d839f63; tvfe_boss_uuid=c274d92db377a818; eas_sid=m1n5D4y7r2G6O796b9c466d135; ts_uid=3349329104; luin=o2542479897; ptui_loginuin=2542479897; lskey=000100001b7a54fcd3301a6718003674b4dd3347c8d0ffff8abb81b50d0c27fcfbf01c34a07f0e4a6d04a41c; o_cookie=2542479897; pac_uid=1_2542479897; qq_openid=A2D3079EDC813B79C1BC3CFE63707361; qq_access_token=41F46BA1B8DF36761DB630851A9FDB9F; qq_client_id=101487368; pgv_info=ssid=s5016911484; pgv_si=s5524955136; ts_last=news.qq.com/; ad_play_index=13'
@@ -68,8 +70,8 @@ def get_newscontent_dict(content_id):
     try:
         data_dict = json.loads(last_str)
     except json.decoder.JSONDecodeError as err:
-        print(err)
-        print("json数据解析失败")
+        logger.error(err)
+        logger.error("json数据解析失败")
         return {
             'article_content': ''
         }
@@ -108,6 +110,7 @@ def start_crawl_redianxinwen(headers):
     status_code = present_response.status_code
     request_number_count = 0
     scrapy_url_list = []
+    logger = logging.getLogger('tencentenws_application')
     # 获取数据库连接
     connection = pythonmysql.connect_to_mysql()
     # 限制请求时间没有用，因为无论是在这里还是在浏览器中，到了指定数目都无法再加载
@@ -119,13 +122,13 @@ def start_crawl_redianxinwen(headers):
     while status_code == 200 and request_number_count <= 10:
         request_number_count += 1
         scrapy_url_list.append(present_response.url)
-        print("The No." + str(request_number_count) + " response.text: ", datetime.datetime.now())
-        print(present_response.text)
+        logger.info("The No." + str(request_number_count) + " response.text: ")
+        logger.info(present_response.text)
         # 将当前的response转换为dict
         data_dict = parse_response_to_dict(present_response)
         # 将获取到的链接数据写入数据库，提供给scrapy用于爬取数据
         # 刚开始是想通过scrapy访问数据库去抓取，其实大可不必，直接存入数据库即可
-        write_to_mysql(connection, data_dict)
+        write_to_mysql(connection, data_dict, request_number_count)
         # 生成一个随机等待的时间表示差别，这里是一到两分钟
         # time.sleep(wait_everytime + random.randint(60, 120))
         next_response = get_next_reponse(data_dict, present_response)
@@ -139,15 +142,16 @@ def start_crawl_redianxinwen(headers):
         present_response = next_response
     # 记得关闭连接
     pythonmysql.close_connection(connection)
-    print("热点新闻部分:")
-    print("最大请求数目: " + str(request_number_count))
-    print("所有请求链接: ")
+    logger.info("热点新闻部分:")
+    logger.info("最大请求数目: " + str(request_number_count))
+    logger.info("所有请求链接: ")
     for links in scrapy_url_list:
-        print(links)
+        logger.info(links)
 
 
 # 将获取到的一次的所有链接及其内容数据写入到mysql
-def write_to_mysql(connection, dict_data):
+def write_to_mysql(connection, dict_data, page_number):
+    logger = logging.getLogger('tencentenws_application')
     check_if_exists = ("""
         SELECT COUNT(*) FROM newsurl_list_tencent
         WHERE newsurl_id = %s
@@ -172,6 +176,8 @@ def write_to_mysql(connection, dict_data):
             )
     """)
     # 寻找并插入内容
+    insert_num = 0
+    same_num = 0
 
     # 将传递过来的数据转换成我们需要的格式
     datalist = list()
@@ -220,6 +226,7 @@ def write_to_mysql(connection, dict_data):
             if cursor.fetchone()[0] < 1:
                 cursor.execute(insert_url_statement, newsurl)
                 # 插入url到表里面之后我们没有必要再分开单独去抽取数据再去爬取，可以直接爬取对应网页的内容
+                insert_num += 1
                 if newsurl['is_ztlink'] == '0':
                     write_link_content_mysql\
                         (cursor, newsurl['content_id'], newsurl['page_url'], newsurl['is_html'],
@@ -229,16 +236,20 @@ def write_to_mysql(connection, dict_data):
             else:
                 cursor.execute(update_url_info,
                                (newsurl['comment_num'], newsurl['view_count'], newsurl['newsurl_id']))
+                same_num += 1
     except mysql.connector.IntegrityError as err:
         connection.rollback()
-        print("属于重复数据，不需要插入，更新即可")
-        print(err)
+        logger.error("属于重复数据，不需要插入，更新即可")
+        logger.error(err)
     # except mysql.connector.Error as err:
     #     connection.rollback()
     #     print("没有捕获的错误，请修改代码")
     #     print(err)
     else:
         connection.commit()
+        logger.info("热点精选 No." + str(page_number) + "条 : ")
+        logger.info("新增数据: " + str(insert_num) + "条")
+        logger.info("重复数据: " + str(same_num) + "条")
     finally:
         cursor.close()
 
@@ -246,6 +257,7 @@ def write_to_mysql(connection, dict_data):
 # 先获取所有的id列表，然后我们再根据id获取到我们需要的内容
 # 专题信息的话，我们直接将所有
 def write_zt_content_mysql(cursor, content_id, unique_id):
+    logger = logging.getLogger('tencentenws_application')
     headers = {
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36',
         'cookie': 'pgv_pvi=873498624; pgv_pvid=8030797876; RK=D2yMD/QFzz; ptcz=090544707cfb8295f419620e0e05125ba60ae0539d0b83b00b7227ca8d839f63; tvfe_boss_uuid=c274d92db377a818; eas_sid=m1n5D4y7r2G6O796b9c466d135; ts_uid=3349329104; luin=o2542479897; ptui_loginuin=2542479897; lskey=000100001b7a54fcd3301a6718003674b4dd3347c8d0ffff8abb81b50d0c27fcfbf01c34a07f0e4a6d04a41c; o_cookie=2542479897; pac_uid=1_2542479897; qq_openid=A2D3079EDC813B79C1BC3CFE63707361; qq_access_token=41F46BA1B8DF36761DB630851A9FDB9F; qq_client_id=101487368; pgv_info=ssid=s5016911484; pgv_si=s5524955136; ts_last=news.qq.com/; ad_play_index=13'
@@ -308,8 +320,8 @@ def write_zt_content_mysql(cursor, content_id, unique_id):
         try:
             cursor.execute(insert_content_sql, data)
         except mysql.connector.errors.DatabaseError as errs:
-            print(errs)
-            print("json数据来说，文章内容过多")
+            logger.error(errs)
+            logger.error("json数据来说，文章内容过多")
             continue
 
 

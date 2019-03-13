@@ -2,6 +2,7 @@ import requests
 import json
 import tencentnews_crawl.MysqlUtils as mysqlutils
 import mysql.connector
+import logging
 
 
 def parse_response_to_dict(respo):
@@ -15,6 +16,7 @@ def parse_response_to_dict(respo):
 
 
 def start_crawl_jinriyaowen(headers):
+    logger = logging.getLogger('tencentenws_application')
     re = requests.get("https://i.match.qq.com/ninja/fragcontent", params={
         'pull_urls': 'news_top_2018',
         'callback': '__jp1'
@@ -22,14 +24,15 @@ def start_crawl_jinriyaowen(headers):
     connection = mysqlutils.connect_to_mysql()
     if re.status_code == 200:
         list_data = parse_response_to_dict(re)
-        print("今日要闻部分: ")
-        print(list_data)
+        logger.info("今日要闻部分: ")
+        logger.info(list_data)
         write_into_mysql(connection, list_data)
     # 关闭连接
     connection.close()
 
 
 def write_into_mysql(connection, list_data):
+    logger = logging.getLogger('tencentenws_application')
     insert_count = 0
     sameitem_count = 0
     # 同样地，我们需要将其写入我们的数据库中
@@ -55,12 +58,12 @@ def write_into_mysql(connection, list_data):
                 sameitem_count += 1
     except mysql.connector.IntegrityError as err:
         connection.rollback()
-        print("属于重复数据，不需要插入，更新即可")
-        print(err)
+        logger.error("属于重复数据，不需要插入，更新即可")
+        logger.error(err)
     else:
         connection.commit()
-        print("今日要闻新增数据" + str(insert_count) + "条")
-        print("重复数据 " + str(sameitem_count) + "条")
+        logger.info("今日要闻新增数据" + str(insert_count) + "条")
+        logger.info("重复数据 " + str(sameitem_count) + "条")
     finally:
         cursor.close()
 
