@@ -21,14 +21,14 @@ class CrawlTencentNewsService(win32serviceutil.ServiceFramework):
         win32serviceutil.ServiceFramework.__init__(self, args)
         self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
         self.run = True
-        self.oldhandler = list()
+        self.handlerlist = list()
         self.logger = logging.getLogger('tencentenws_application')
 
 
     def SvcDoRun(self):
         while self.run:
             try:
-                self.oldhandler = pythonlog.setlogger(self.oldhandler)
+                pythonlog.setlogger(self.handlerlist)
                 crawldata.run()
                 time.sleep(60 * 60 * 2)
             except Exception as e:

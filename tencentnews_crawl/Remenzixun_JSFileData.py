@@ -25,6 +25,7 @@ def get_next_resp(headers, page_number):
 
 
 def start_crawl_remenzixun(headers):
+    logger = logging.getLogger('tencentenws_application')
     present_resp = requests.get("https://pacaio.match.qq.com/irs/rcd", params={
         'cid': 4,
         'token': '9513f1a78a663e1d25b46a826f248c3c',
@@ -35,15 +36,27 @@ def start_crawl_remenzixun(headers):
     }, headers=headers)
     request_count = 0
     page_number = 0
+    direct_next = False
+
     status_code = present_resp.status_code
     connection = mysqlutils.connect_to_mysql()
 
     while status_code == 200 and request_count <= 600:
         page_number += 1
         request_count += 1
-        data_dict = parse_response_to_dict(present_resp)
-        write_into_mysql(connection, data_dict, page_number)
-        present_resp = get_next_resp(headers, page_number)
+        if not direct_next:
+            data_dict = parse_response_to_dict(present_resp)
+            write_into_mysql(connection, data_dict, page_number)
+        # 注意这里很有可能出现超时请求，所以我们可以进行捕获然后获取下一个page_number的数据
+        # 这部分暂时不提交吧，如果老是出现这个问题则可以将其提交过去进行修补
+        direct_next = False
+        try:
+            present_resp = get_next_resp(headers, page_number)
+        except requests.exceptions.ConnectionError as err:
+            logging.error(err)
+            logger.error("content timeout 连接超时")
+            direct_next = True
+            continue
     # 关闭连接
     connection.close()
 

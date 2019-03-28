@@ -241,6 +241,10 @@ def write_to_mysql(connection, dict_data, page_number):
         connection.rollback()
         logger.error("属于重复数据，不需要插入，更新即可")
         logger.error(err)
+    except mysql.connector.errors.DatabaseError as err:
+        connection.rollback()
+        logger.error("锁等待超时")
+        logging.error(err)
     # except mysql.connector.Error as err:
     #     connection.rollback()
     #     print("没有捕获的错误，请修改代码")
@@ -260,7 +264,7 @@ def write_zt_content_mysql(cursor, content_id, unique_id):
     logger = logging.getLogger('tencentenws_application')
     headers = {
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/69.0.3497.100 Safari/537.36',
-        'cookie': 'pgv_pvi=873498624; pgv_pvid=8030797876; RK=D2yMD/QFzz; ptcz=090544707cfb8295f419620e0e05125ba60ae0539d0b83b00b7227ca8d839f63; tvfe_boss_uuid=c274d92db377a818; eas_sid=m1n5D4y7r2G6O796b9c466d135; ts_uid=3349329104; luin=o2542479897; ptui_loginuin=2542479897; lskey=000100001b7a54fcd3301a6718003674b4dd3347c8d0ffff8abb81b50d0c27fcfbf01c34a07f0e4a6d04a41c; o_cookie=2542479897; pac_uid=1_2542479897; qq_openid=A2D3079EDC813B79C1BC3CFE63707361; qq_access_token=41F46BA1B8DF36761DB630851A9FDB9F; qq_client_id=101487368; pgv_info=ssid=s5016911484; pgv_si=s5524955136; ts_last=news.qq.com/; ad_play_index=13'
+        'cookie': 'pgv_pvi=873498624; pgv_pvid=8030797876; RK=D2yMD/QFzz; ptcz=090544707cfb8295f419620e0e05125ba60ae0539d0b83b00b7227ca8d839f63; tvfe_boss_uuid=c274d92db377a818; eas_sid=m1n5D4y7r2G6O796b9c466d135; luin=o2542479897; ptui_loginuin=2542479897; lskey=000100001b7a54fcd3301a6718003674b4dd3347c8d0ffff8abb81b50d0c27fcfbf01c34a07f0e4a6d04a41c; o_cookie=2542479897; pac_uid=1_2542479897; uid=413994855; pgv_info=ssid=s7552449838; pgv_si=s2044055552'
     }
     id_list = list()
     respo = requests.get("https://openapi.inews.qq.com/getQQNewsNormalContent", params={
