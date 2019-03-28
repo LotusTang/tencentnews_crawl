@@ -111,7 +111,9 @@
 
 　　数据库表结构建立都存放在sql目录下，需要可以自取。
 
+## 如何运行
 
+　　直接run tencentnews_crawl目录下的CrawlTencentNewsJSFileData.py入口即可,文件中也提供了将其生成windows服务的CrawlTencentNewsService.py文件，目前已捕获已知的异常，如有其它情况可以自行修改。
 
 
 
