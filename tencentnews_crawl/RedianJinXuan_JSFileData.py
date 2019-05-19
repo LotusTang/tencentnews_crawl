@@ -79,7 +79,7 @@ def get_newscontent_dict(content_id):
     content_str = ""
     for con_item in data_dict['ext_data']['content']:
         if con_item['type'] != 'img_url' and con_item['desc'] is not None:
-            content_str += con_item['desc']
+            content_str += con_item['desc'] + '  '
     return {
         'article_content': content_str
     }
@@ -92,7 +92,7 @@ def get_newscontent_from_html(url):
     content_str = ""
     for item in div_content_tags:
         if item.string is not None:
-            content_str += item.string
+            content_str += item.string + '  '
     return {
         'article_content': content_str
     }
@@ -314,7 +314,7 @@ def write_zt_content_mysql(cursor, content_id, unique_id):
         content_str = ""
         for item_ in data_dict['content']:
             if item_['type'] == 1:
-                content_str += item_['value']
+                content_str += item_['value'] + '  '
         data = {
             'content_id': unique_id,
             'title': data_dict['title'],

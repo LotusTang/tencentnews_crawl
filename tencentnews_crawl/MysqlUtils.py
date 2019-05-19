@@ -6,7 +6,7 @@ def connect_to_mysql():
     config = {
         'user': 'root',
         'password': '123',
-        'host': '127.0.0.1',
+        'host': 'localhost',
         'database': 'tencentnews_data',
         'raise_on_warnings': True
     }
@@ -28,26 +28,23 @@ def close_connection(con):
 
 
 if __name__ == '__main__':
+    check_if_exists = ("""
+            SELECT COUNT(1) FROM user
+        """)
     print("测试连接数据库: ")
     connection = connect_to_mysql()
     print("Connect Success")
     # 测试在数据库中插入数据
-    data = {
-        'newsurl_id': '123',
-        'news_title': 'mytitle',
-        'news_intro': 'myintro',
-        'keywords': 'keywords',
-        'main_category': 'ca1',
-        'sub_category': 'ca2',
-        'comment_id': '1231231231',
-        'comment_num': 1111,
-        'publish_time': '2019-03-04 12:38:40',
-        'page_url': 'news.qq.com',
-        'source': '腾讯新闻',
-        'view_count': 10000,
-        'is_ztlink': '1'
-    }
+    cursor = connection.cursor(buffered=True)
+    cursor.execute(check_if_exists,)
+    # print('是否已连接:' + str(connection.is_connected()))
+    # row = cursor.fetchone()
+    if cursor.fetchone()[0] < 1:
+        print("不存在结果")
+    else:
+        print("存在结果")
     print("关闭连接: ")
+
     close_connection(connection)
 
 
